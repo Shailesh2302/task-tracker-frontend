@@ -3,6 +3,7 @@ import { List, Plus } from "lucide-react";
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../AppProvider";
+import { motion } from "framer-motion";
 
 const TaskListScreen: React.FC = () => {
   const { state, api } = useAppContext();
@@ -14,7 +15,6 @@ const TaskListScreen: React.FC = () => {
     }
   }, [state]);
 
-  // Get a handle on the router
   const navigate = useNavigate();
 
   const handleCreateTaskList = () => {
@@ -27,47 +27,70 @@ const TaskListScreen: React.FC = () => {
   };
 
   return (
-    <div className="p-4 max-w-sm w-full">
-      <h1 className="text-2xl font-bold mb-4 pr-2">My Task Lists</h1>
-      <Button
-        onPress={handleCreateTaskList}
-        color="primary"
-        startContent={<Plus size={20} aria-hidden="true" />}
-        className="w-full mb-4"
-        aria-label="Create New Task List"
+    <div className="p-6 max-w-lg w-full mx-auto">
+      <motion.h1
+        className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-blue-500 to-purple-600 text-transparent bg-clip-text"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
       >
-        Create New Task List
-      </Button>
-      {state.taskLists.map((list) => {
-        return (
-          <Card
+        My Task Lists
+      </motion.h1>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4 }}
+      >
+        <Button
+          onPress={handleCreateTaskList}
+          color="primary"
+          startContent={<Plus size={20} aria-hidden="true" />}
+          className="w-full mb-6 font-semibold shadow-md hover:shadow-lg transition-all"
+          aria-label="Create New Task List"
+        >
+          Create New Task List
+        </Button>
+      </motion.div>
+
+      <div className="space-y-5">
+        {state.taskLists.map((list, index) => (
+          <motion.div
             key={list.id}
-            isPressable
-            onPress={() => handleSelectTaskList(list.id)}
-            className="mb-4 w-full"
-            role="button"
-            aria-label={`Select task list: ${list.title}`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
           >
-            <CardBody>
-              <div className="flex items-center">
-                <List
-                  size={20}
-                  className="mr-2 opacity-[40%]"
-                  aria-hidden="true"
+            <Card
+              isPressable
+              onPress={() => handleSelectTaskList(list.id)}
+              className="backdrop-blur-lg bg-white/70 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 hover:scale-[1.02] hover:shadow-xl transition-transform duration-300"
+              role="button"
+              aria-label={`Select task list: ${list.title}`}
+            >
+              <CardBody>
+                <div className="flex items-center mb-2">
+                  <List
+                    size={22}
+                    className="mr-3 opacity-60 text-blue-500"
+                    aria-hidden="true"
+                  />
+                  <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                    {list.title}
+                  </h2>
+                </div>
+                <p className="text-sm text-gray-500 mb-2">{list.count} tasks</p>
+                <Progress
+                  value={list.progress ? list.progress * 100 : 0}
+                  className="h-2 rounded-full"
+                  color="primary"
+                  aria-label={`Progress for ${list.title}: ${list.progress}%`}
                 />
-                <h2 className="text-lg font-semibold">{list.title}</h2>{" "}
-              </div>
-              <p className="text-sm text-gray-500 mt-2">{list.count} tasks</p>
-              <Progress
-                value={list.progress ? list.progress * 100 : 0}
-                className="mt-2"
-                color="primary"
-                aria-label={`Progress for ${list.title}: ${list.progress}%`}
-              />
-            </CardBody>
-          </Card>
-        );
-      })}
+              </CardBody>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
     </div>
   );
 };

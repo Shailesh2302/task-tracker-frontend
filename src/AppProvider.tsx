@@ -38,8 +38,10 @@ const DELETE_TASK = "DELETE_TASK";
 // Reducer
 const reducer = (state: AppState, action: Action): AppState => {
   switch (action.type) {
+
     case FETCH_TASKLISTS:
       return { ...state, taskLists: action.payload };
+
     case GET_TASKLIST:
       return {
         ...state,
@@ -49,8 +51,10 @@ const reducer = (state: AppState, action: Action): AppState => {
             )
           : [...state.taskLists, action.payload],
       };
+
     case CREATE_TASKLIST:
       return { ...state, taskLists: [...state.taskLists, action.payload] };
+
     case UPDATE_TASKLIST:
       return {
         ...state,
@@ -58,11 +62,13 @@ const reducer = (state: AppState, action: Action): AppState => {
           wl.id === action.payload.id ? action.payload : wl
         ),
       };
+
     case DELETE_TASKLIST:
       return {
         ...state,
         taskLists: state.taskLists.filter((wl) => wl.id !== action.payload),
       };
+
     case FETCH_TASKS:
       return {
         ...state,
@@ -71,6 +77,7 @@ const reducer = (state: AppState, action: Action): AppState => {
           [action.payload.taskListId]: action.payload.tasks,
         },
       };
+
     case CREATE_TASK:
       return {
         ...state,
@@ -82,6 +89,7 @@ const reducer = (state: AppState, action: Action): AppState => {
           ],
         },
       };
+      
     case GET_TASK: {
       // Get existing tasks or initialize empty array
       const existingTasks = state.tasks[action.payload.taskListId] || [];

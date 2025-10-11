@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Button, Input, Textarea, Spacer, Card, Chip } from "@nextui-org/react";
+import {
+  Button,
+  Input,
+  Textarea,
+  Spacer,
+  Card,
+  Chip,
+  Spinner,
+} from "@nextui-org/react";
 import { ArrowLeft } from "lucide-react";
 import { useAppContext } from "../AppProvider";
 import { useNavigate, useParams } from "react-router-dom";
@@ -8,6 +16,7 @@ import { TaskPriority } from "../domain/TaskPriority";
 import { DatePicker } from "@nextui-org/date-picker";
 import { TaskStatus } from "../domain/TaskStatus";
 import { parseDate } from "@internationalized/date";
+import { motion } from "framer-motion";
 
 const CreateUpdateTaskScreen: React.FC = () => {
   const { state, api } = useAppContext();
@@ -23,7 +32,6 @@ const CreateUpdateTaskScreen: React.FC = () => {
   const [priority, setPriority] = useState(TaskPriority.MEDIUM);
   const [status, setStatus] = useState<TaskStatus | undefined>(undefined);
 
-  // Load initial data
   useEffect(() => {
     const loadInitialData = async () => {
       if (!listId || !taskId) {
@@ -33,26 +41,14 @@ const CreateUpdateTaskScreen: React.FC = () => {
 
       setIsLoading(true);
       try {
-        console.log("Loading initial data...");
-        
-        // First ensure we have the task list
-        if (!state.taskLists.find(tl => tl.id === listId)) {
+        if (!state.taskLists.find((tl) => tl.id === listId)) {
           await api.getTaskList(listId);
         }
 
-        // Load the individual task
         const taskResponse = await api.getTask(listId, taskId);
-        console.log("Task loaded:", taskResponse);
-        
-        // Check state after loading
-        console.log("Current state after load:", state);
-        
-        // Get task from state
-        const task = state.tasks[listId]?.find(t => t.id === taskId);
-        console.log("Found task in state:", task);
+        const task = state.tasks[listId]?.find((t) => t.id === taskId);
 
         if (task) {
-          console.log("Setting form values with task:", task);
           setTitle(task.title);
           setDescription(task.description || "");
           setDueDate(task.dueDate ? new Date(task.dueDate) : undefined);
@@ -62,7 +58,6 @@ const CreateUpdateTaskScreen: React.FC = () => {
 
         setIsUpdate(true);
       } catch (error) {
-        console.error("Error loading task:", error);
         if (axios.isAxiosError(error)) {
           setError(error.response?.data?.message || error.message);
         } else {
@@ -75,23 +70,6 @@ const CreateUpdateTaskScreen: React.FC = () => {
 
     loadInitialData();
   }, [listId, taskId]);
-
-  // Watch for task updates in state
-  useEffect(() => {
-    if (listId && taskId && state.tasks[listId]) {
-      const task = state.tasks[listId].find(t => t.id === taskId);
-      console.log("State updated, current task:", task);
-      
-      if (task) {
-        console.log("Updating form with task from state update:", task);
-        setTitle(task.title);
-        setDescription(task.description || "");
-        setDueDate(task.dueDate ? new Date(task.dueDate) : undefined);
-        setPriority(task.priority || TaskPriority.MEDIUM);
-        setStatus(task.status);
-      }
-    }
-  }, [listId, taskId, state.tasks]);
 
   const createUpdateTask = async () => {
     try {
@@ -132,76 +110,115 @@ const CreateUpdateTaskScreen: React.FC = () => {
 
   const formatDateForPicker = (date: Date | undefined) => {
     if (!date) return undefined;
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split("T")[0];
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Spinner size="lg" color="primary" />
+      </div>
+    );
   }
 
   return (
-    <div className="p-4 max-w-md mx-auto">
+    <motion.div
+      className="p-6 max-w-md mx-auto"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      {/* Header */}
       <div className="flex items-center space-x-4 mb-6">
-        <Button 
+        <Button
           variant="ghost"
           aria-label="Go back"
           onClick={() => navigate(`/task-lists/${listId}`)}
+          className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
         >
           <ArrowLeft size={20} />
         </Button>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-3xl font-extrabold bg-gradient-to-r from-indigo-500 to-purple-600 text-transparent bg-clip-text">
           {isUpdate ? "Update Task" : "Create Task"}
         </h1>
       </div>
-      {error && <Card className="mb-4 p-4 text-red-500">{error}</Card>}
-      <form onSubmit={(e) => e.preventDefault()}>
-        <Input
-          label="Title"
-          placeholder="Enter task title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-          fullWidth
-        />
-        <Spacer y={1} />
-        <Textarea
-          label="Description"
-          placeholder="Enter task description (optional)"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          fullWidth
-        />
-        <Spacer y={1} />
-        <DatePicker
-          label="Due date (optional)"
-          defaultValue={dueDate ? parseDate(formatDateForPicker(dueDate)!) : undefined}
-          onChange={(newDate) => handleDateChange(newDate ? new Date(newDate.toString()) : null)}
-        />
-        <Spacer y={4} />
-        <div className="flex justify-between mx-auto gap-2">
-          {Object.values(TaskPriority).map((p) => (
-            <Chip
-              key={p}
-              color={priority === p ? "primary" : "default"}
-              variant={priority === p ? "solid" : "faded"}
-              onClick={() => setPriority(p)}
-              className="cursor-pointer"
-            >
-              {p} Priority
-            </Chip>
-          ))}
-        </div>
-        <Spacer y={4} />
-        <Button 
-          type="submit" 
-          color="primary" 
-          onClick={createUpdateTask}
-          fullWidth
+
+      {/* Error Card */}
+      {error && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mb-4"
         >
-          {isUpdate ? "Update Task" : "Create Task"}
-        </Button>
-      </form>
-    </div>
+          <Card className="p-4 bg-red-100/60 border border-red-400 text-red-700 shadow-sm">
+            {error}
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Form */}
+      <motion.form
+        onSubmit={(e) => e.preventDefault()}
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <Card className="p-6 backdrop-blur-xl bg-white/70 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all">
+          <Input
+            label="Title"
+            placeholder="Enter task title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            fullWidth
+          />
+          <Spacer y={2} />
+          <Textarea
+            label="Description"
+            placeholder="Enter task description (optional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            fullWidth
+          />
+          <Spacer y={2} />
+          <DatePicker
+            label="Due date (optional)"
+            defaultValue={
+              dueDate ? parseDate(formatDateForPicker(dueDate)!) : undefined
+            }
+            onChange={(newDate) =>
+              handleDateChange(newDate ? new Date(newDate.toString()) : null)
+            }
+          />
+          <Spacer y={4} />
+          <div className="flex justify-between flex-wrap gap-2">
+            {Object.values(TaskPriority).map((p) => (
+              <Chip
+                key={p}
+                color={priority === p ? "primary" : "default"}
+                variant={priority === p ? "solid" : "faded"}
+                onClick={() => setPriority(p)}
+                className="cursor-pointer transition-all hover:scale-105"
+              >
+                {p} Priority
+              </Chip>
+            ))}
+          </div>
+          <Spacer y={6} />
+          <motion.div whileHover={{ scale: 1.02 }}>
+            <Button
+              type="submit"
+              color="primary"
+              onClick={createUpdateTask}
+              fullWidth
+              className="font-semibold shadow-md hover:shadow-lg transition-all"
+            >
+              {isUpdate ? "Update Task" : "Create Task"}
+            </Button>
+          </motion.div>
+        </Card>
+      </motion.form>
+    </motion.div>
   );
 };
 
